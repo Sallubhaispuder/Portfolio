@@ -1,0 +1,1 @@
+REPLACE-ME: add a compressed hero image at this path named "hero.jpg" (recommended: 1600x800, JPEG/WebP). This file is a placeholder to ensure the folder exists.
