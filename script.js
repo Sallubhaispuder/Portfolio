@@ -20,6 +20,58 @@
   // Theme toggle removed — force light theme only
   doc.setAttribute('data-theme','light');
 
+  // Background music: load and control playback via header toggle
+  const musicToggle = document.getElementById('music-toggle');
+  let bgMusic;
+  function initBackgroundMusic(){
+    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    try{
+  bgMusic = new Audio('assets/bg-music.mp3');
+      bgMusic.loop = true;
+      bgMusic.volume = 0.18; // low background volume
+      bgMusic.preload = 'auto';
+    }catch(e){ bgMusic = null }
+  }
+
+  function playBackground(){ if(bgMusic) bgMusic.play().catch(()=>{}); }
+  function pauseBackground(){ if(bgMusic) bgMusic.pause(); }
+
+  // persist user preference
+  function setMusicState(enabled){
+    try{ localStorage.setItem('bg-music', enabled? '1' : '0'); }catch(e){}
+    if(musicToggle) musicToggle.setAttribute('aria-pressed', enabled? 'true' : 'false');
+  }
+
+  // initialize on first gesture to satisfy autoplay policies
+  function resumeMediaOnGesture(){
+    if(!bgMusic) initBackgroundMusic();
+    const pref = (()=>{ try{ return localStorage.getItem('bg-music'); }catch(e){} })();
+    const enabled = pref === null || pref === '1'; // default: enabled
+    if(enabled && bgMusic){ playBackground(); }
+    // ensure the toggle UI reflects stored preference
+    try{ setMusicState(!!enabled); }catch(e){}
+    window.removeEventListener('pointerdown', resumeMediaOnGesture);
+  }
+  window.addEventListener('pointerdown', resumeMediaOnGesture);
+
+  // On load, reflect persisted music preference in the toggle UI (don't autoplay here)
+  try{
+    const stored = localStorage.getItem('bg-music');
+    if(musicToggle){
+      if(stored === '0') musicToggle.setAttribute('aria-pressed','false');
+      else musicToggle.setAttribute('aria-pressed','true');
+    }
+  }catch(e){}
+
+  if(musicToggle){
+    musicToggle.addEventListener('click', ()=>{
+      if(!bgMusic) initBackgroundMusic();
+      if(!bgMusic) return;
+      if(bgMusic.paused){ playBackground(); setMusicState(true); }
+      else { pauseBackground(); setMusicState(false); }
+    });
+  }
+
   // Mobile menu: simple focus trap
   function openMobile(){
     mobileMenu.setAttribute('aria-hidden','false');
@@ -74,47 +126,41 @@
   mailLink && mailLink.addEventListener('click', (e)=>{ e.preventDefault(); copyText('jharshit189@gmail.com', mailLink);} );
   copyDiscordBtn && copyDiscordBtn.addEventListener('click', ()=> copyText('1105512233166962900', copyDiscordBtn));
 
-  // Click sound (WebAudio) - generated short blip; respects reduced motion/media
-  let audioCtx, clickBuffer;
-  function initClickSound(){
+  // Click sound: use provided MP3 and play for interactive elements
+  let clickAudio;
+  function initClickAudio(){
     if(prefersReduced) return;
     try{
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const sampleRate = audioCtx.sampleRate;
-      const length = Math.floor(sampleRate * 0.02); // 20ms
-      clickBuffer = audioCtx.createBuffer(1, length, sampleRate);
-      const data = clickBuffer.getChannelData(0);
-      for(let i=0;i<length;i++){
-        // quick percussive envelope
-        data[i] = (Math.random()*2-1) * Math.exp(-30 * i/length) * 0.25;
-      }
-    }catch(e){audioCtx = null}
+      clickAudio = new Audio('assets/ui-mouse-click-366460.mp3');
+      clickAudio.preload = 'auto';
+      // ensure small volume
+      clickAudio.volume = 0.7;
+    }catch(e){ clickAudio = null }
   }
-  function playClick(){
-    if(!audioCtx) return;
-    const s = audioCtx.createBufferSource();
-    s.buffer = clickBuffer;
-    const g = audioCtx.createGain();
-    g.gain.value = 0.8;
-    s.connect(g); g.connect(audioCtx.destination);
-    s.start();
-    setTimeout(()=>{ try{ s.stop() }catch(e){} }, 100);
-  }
-  // initialize on first user gesture to satisfy autoplay policies
+  // initialize on first user gesture for autoplay policies
   function resumeAudioOnGesture(){
-    if(!audioCtx){ initClickSound(); }
-    if(audioCtx && audioCtx.state === 'suspended'){
-      audioCtx.resume();
-    }
+    if(prefersReduced) return;
+    if(!clickAudio) initClickAudio();
+    // HTMLAudioElement doesn't require resume, but keep handler for consistency
     window.removeEventListener('pointerdown', resumeAudioOnGesture);
   }
   window.addEventListener('pointerdown', resumeAudioOnGesture);
 
+  function playClick(){
+    try{
+      if(!clickAudio) initClickAudio();
+      if(!clickAudio) return;
+      // clone to allow overlapping clicks
+      const a = clickAudio.cloneNode();
+      a.volume = clickAudio.volume;
+      a.play().catch(()=>{});
+    }catch(e){}
+  }
   // attach play to interactive elements
   function attachClickSound(){
     if(prefersReduced) return;
     const interactives = document.querySelectorAll('button, a, .chip');
-    interactives.forEach(el=> el.addEventListener('click', ()=>{ try{ if(!audioCtx) initClickSound(); playClick(); }catch(e){} }));
+    interactives.forEach(el=> el.addEventListener('click', ()=>{ try{ playClick(); }catch(e){} }));
   }
   attachClickSound();
 

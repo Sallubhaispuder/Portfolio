@@ -115,7 +115,7 @@ body{
 .exp-feature{background-image:url('assets/merp_bg.png');background-size:cover;background-position:center;padding-left:124px}
 .exp-feature::after{opacity:0.06}
 .exp-feature .exp-feature-media{position:absolute;left:18px;top:18px;bottom:18px;width:84px;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:3}
-.exp-feature .merp-logo{max-width:56px;height:auto;border-radius:8px;box-shadow:0 6px 18px rgba(10,20,30,0.12);background:rgba(255,255,255,0.75);padding:4px}
+.exp-feature .merp-logo{max-width:56px;height:auto;border-radius:12px;box-shadow:0 8px 22px rgba(10,20,30,0.10);background:rgba(255,255,255,0.42);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,0.28);padding:6px}
 @media (max-width:640px){
   .exp-feature{background-size:cover;background-position:center 20%}
   .exp-feature .exp-feature-media{display:none}
