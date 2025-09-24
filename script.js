@@ -22,11 +22,12 @@
 
   // Background music: load and control playback via header toggle
   const musicToggle = document.getElementById('music-toggle');
+  const jblSpeaker = document.getElementById('jbl-speaker');
   let bgMusic;
   function initBackgroundMusic(){
-    if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     try{
-  bgMusic = new Audio('assets/bg-music.mp3');
+      bgMusic = new Audio('assets/bg-music.mp3');
+      bgMusic.crossOrigin = 'anonymous';
       bgMusic.loop = true;
       bgMusic.volume = 0.18; // low background volume
       bgMusic.preload = 'auto';
@@ -51,8 +52,14 @@
     // ensure the toggle UI reflects stored preference
     try{ setMusicState(!!enabled); }catch(e){}
     window.removeEventListener('pointerdown', resumeMediaOnGesture);
+    window.removeEventListener('touchstart', resumeMediaOnGesture);
+    window.removeEventListener('keydown', resumeMediaOnGesture);
   }
-  window.addEventListener('pointerdown', resumeMediaOnGesture);
+  if(!jblSpeaker){
+    window.addEventListener('pointerdown', resumeMediaOnGesture, { once:false });
+    window.addEventListener('touchstart', resumeMediaOnGesture, { passive:true, once:false });
+    window.addEventListener('keydown', resumeMediaOnGesture, { once:false });
+  }
 
   // On load, reflect persisted music preference in the toggle UI (don't autoplay here)
   try{
@@ -63,7 +70,7 @@
     }
   }catch(e){}
 
-  if(musicToggle){
+  if(musicToggle && !jblSpeaker){
     musicToggle.addEventListener('click', ()=>{
       if(!bgMusic) initBackgroundMusic();
       if(!bgMusic) return;
@@ -129,22 +136,26 @@
   // Click sound: use provided MP3 and play for interactive elements
   let clickAudio;
   function initClickAudio(){
-    if(prefersReduced) return;
+    // Always allow click sound (it's a discrete UX cue, not motion)
     try{
       clickAudio = new Audio('assets/ui-mouse-click-366460.mp3');
       clickAudio.preload = 'auto';
+      clickAudio.crossOrigin = 'anonymous';
       // ensure small volume
       clickAudio.volume = 0.7;
     }catch(e){ clickAudio = null }
   }
   // initialize on first user gesture for autoplay policies
   function resumeAudioOnGesture(){
-    if(prefersReduced) return;
     if(!clickAudio) initClickAudio();
     // HTMLAudioElement doesn't require resume, but keep handler for consistency
     window.removeEventListener('pointerdown', resumeAudioOnGesture);
+    window.removeEventListener('touchstart', resumeAudioOnGesture);
+    window.removeEventListener('keydown', resumeAudioOnGesture);
   }
-  window.addEventListener('pointerdown', resumeAudioOnGesture);
+  window.addEventListener('pointerdown', resumeAudioOnGesture, { once:false });
+  window.addEventListener('touchstart', resumeAudioOnGesture, { passive:true, once:false });
+  window.addEventListener('keydown', resumeAudioOnGesture, { once:false });
 
   function playClick(){
     try{
@@ -158,7 +169,6 @@
   }
   // attach play to interactive elements
   function attachClickSound(){
-    if(prefersReduced) return;
     const interactives = document.querySelectorAll('button, a, .chip');
     interactives.forEach(el=> el.addEventListener('click', ()=>{ try{ playClick(); }catch(e){} }));
   }
